@@ -1,16 +1,16 @@
-// Import and configure Firebase
+// Import Firebase modules
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
 import { getFirestore, setDoc, doc } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 
-// Your web app's Firebase configuration
+// Your Firebase configuration object
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_AUTH_DOMAIN",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_STORAGE_BUCKET",
+    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+    appId: "YOUR_APP_ID"
 };
 
 // Initialize Firebase
@@ -19,7 +19,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 // Function to save account details
-function saveAccountDetails(event) {
+async function saveAccountDetails(event) {
     event.preventDefault();  // Prevent the default form submission
     
     const firstName = document.getElementById('first-name').value;
@@ -30,27 +30,26 @@ function saveAccountDetails(event) {
     const address = document.getElementById('address').value;
     const password = document.getElementById('password').value;
 
-    createUserWithEmailAndPassword(auth, email, password)
-        .then((userCredential) => {
-            // Signed up
-            const user = userCredential.user;
+    try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
 
-            // Save additional user data to Firestore
-            const userData = {
-                firstName: firstName,
-                lastName: lastName,
-                phoneNumber: phoneNumber,
-                companyName: companyName,
-                address: address
-            };
-            setDoc(doc(db, "users", user.uid), userData);
-
-            // Redirect to the sign-in page after saving
-            window.location.href = 'index.html';
-        })
-        .catch((error) => {
-            console.error('Error signing up:', error.message);
+        // Save user details in Firestore
+        await setDoc(doc(db, "users", user.uid), {
+            firstName,
+            lastName,
+            email,
+            phoneNumber,
+            companyName,
+            address
         });
+
+        // Redirect to the sign-in page after saving
+        window.location.href = 'index.html';
+    } catch (error) {
+        console.error("Error signing up: ", error);
+        alert("Error signing up. Please try again.");
+    }
 }
 
 // Attach the saveAccountDetails function to the sign-up form submit event
